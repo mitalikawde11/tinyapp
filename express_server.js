@@ -39,7 +39,13 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURLid] = reqLongURL;
   // redirect to '/urls/:id'
   res.redirect(`/urls/${shortURLid}`);
-})
+});
+
+// redirect short URLs to the appropriate longURL
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
 
 // render information about a single URL
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
@@ -65,21 +71,6 @@ app.get("/", (req, res) => {
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
-
-// sending HTML
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/set", (req, res) => {
-  const a = 1;
-  res.send(`a = ${a}`);
- });
- 
- // can't access the 'a' variable which defined in other method 
-//  app.get("/fetch", (req, res) => {
-//   res.send(`a = ${a}`);
-//  });
 */
 
 
