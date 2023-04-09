@@ -11,6 +11,12 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// add a route for "/urls" and pass URL data to template using res.render()
+app.get("/urls", (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render("urls_index", templateVars);
+});
+
 // registers a handler on the root path, "/"
 app.get("/", (req, res) => {
   res.send("Hello!");
