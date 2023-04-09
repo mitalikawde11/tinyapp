@@ -17,6 +17,22 @@ app.get("/urls", (req, res) => {
   res.render("urls_index", templateVars);
 });
 
+// render information about a single URL
+// use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
+app.get("/urls/:id", (req, res) => {
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  res.render("urls_show", templateVars);
+});
+
+
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
+
+
+
+/*
 // registers a handler on the root path, "/"
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -41,7 +57,6 @@ app.get("/set", (req, res) => {
 //  app.get("/fetch", (req, res) => {
 //   res.send(`a = ${a}`);
 //  });
+*/
 
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
-});
+
