@@ -1,8 +1,10 @@
 // Creating web server with express
-
 const express = require("express");
 const app = express();
 const PORT = 8080;  // default port 8080
+
+// telling the Express app to use EJS as its templating engine
+app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
@@ -29,6 +31,7 @@ app.get("/set", (req, res) => {
   res.send(`a = ${a}`);
  });
  
+ // can't access the 'a' variable which defined in other method 
 //  app.get("/fetch", (req, res) => {
 //   res.send(`a = ${a}`);
 //  });
