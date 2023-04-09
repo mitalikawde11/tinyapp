@@ -11,11 +11,31 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+// The body-parser library will convert the request body from a Buffer into string that we can read.
+app.use(express.urlencoded({ extended: true }));
+
+// generate a random short URL ID (random string)
+function generateRandomString() {
+  const randomStr = Math.random().toString(32).substring(2, 5) + Math.random().toString(32).substring(2, 5);
+  return randomStr;
+};
+
 // add a route for "/urls" and pass URL data to template using res.render()
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
+
+// GET route to render the urls_new.ejs template in the browser, to present the form to the user
+app.get("/urls/new", (req, res) => {
+  res.render("urls_new");
+});
+
+// add a POST route to receive the form submission (receive the input value to the server)
+app.post("/urls", (req, res) => {
+  console.log(req.body); // Log the POST request body to the console
+  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+})
 
 // render information about a single URL
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
@@ -24,11 +44,10 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
 
 
 
