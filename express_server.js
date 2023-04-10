@@ -31,7 +31,7 @@ app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-// add a POST route to receive the form submission (receive the input value to the server)
+// add a POST route to receive the form submission of new URL (receive the input value to the server)
 app.post("/urls", (req, res) => {
   const shortURLid = generateRandomString();
   const reqLongURL = req.body.longURL;
@@ -54,12 +54,24 @@ app.post("/urls/:id/delete", (req, res) => {
   res.redirect("/urls");
 });
 
+// POST route updates the value of the stored long URL based on the new value
+app.post("/urls/:id", (req, res) => {
+  const URLid = req.params.id;
+  const reqNewURL = req.body.newURL;
+  // edit long URL of that short URL id to the database(object) 
+  urlDatabase[URLid] = reqNewURL;
+  res.redirect("/urls");
+});
+
 // render information about a single URL
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
 app.get("/urls/:id", (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render("urls_show", templateVars);
 });
+
+
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
