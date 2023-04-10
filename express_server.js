@@ -70,8 +70,12 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
-
+// POST route set a cookie named 'username' to the value submitted in the request body via the login form
+app.post("/login", (req, res) => {
+  const value = req.body.username;
+  res.cookie('username', value);
+  res.redirect("/urls");
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
