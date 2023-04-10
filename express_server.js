@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // generate a random short URL ID (random string)
 function generateRandomString() {
-  const randomStr = Math.random().toString(32).substring(2, 5) + Math.random().toString(32).substring(2, 5);
+  const randomStr = Math.random().toString(32).substring(2, 8);
   return randomStr;
 };
 
@@ -45,6 +45,13 @@ app.post("/urls", (req, res) => {
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
+});
+
+// POST route removes the URL using Javascript's delete operator
+app.post("/urls/:id/delete", (req, res) => {
+  const URLid = req.params.id;
+  delete urlDatabase[URLid];
+  res.redirect("/urls");
 });
 
 // render information about a single URL
