@@ -1,18 +1,20 @@
 // Creating web server with express
 const express = require("express");
+// 'cookie-parser' helps to read the 'values' from the cookie
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;  // default port 8080
 
 // telling the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
+app.use(cookieParser());
+// The body-parser library will convert the request body from a Buffer into string that we can read.
+app.use(express.urlencoded({ extended: true }));
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-
-// The body-parser library will convert the request body from a Buffer into string that we can read.
-app.use(express.urlencoded({ extended: true }));
 
 // generate a random short URL ID (random string)
 function generateRandomString() {
@@ -20,15 +22,23 @@ function generateRandomString() {
   return randomStr;
 };
 
+
 // add a route for "/urls" and pass URL data to template using res.render()
+// display the logged in username in the header using cookie parser
+// extract the cookie value & set it to 'username' and send it to header
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { 
+    username: req.cookies["username"],   
+    urls: urlDatabase 
+  };
   res.render("urls_index", templateVars);
 });
 
 // GET route to render the urls_new.ejs template in the browser, to present the form to the user
+// extract the cookie value & set it to 'username' and send it to header
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 // add a POST route to receive the form submission of new URL (receive the input value to the server)
@@ -65,8 +75,13 @@ app.post("/urls/:id", (req, res) => {
 
 // render information about a single URL
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
+// extract the cookie value & set it to 'username' and send it to header
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { 
+    username: req.cookies["username"],
+    id: req.params.id, 
+    longURL: urlDatabase[req.params.id] 
+  };
   res.render("urls_show", templateVars);
 });
 
@@ -80,20 +95,5 @@ app.post("/login", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
-
-
-
-
-/*
-// registers a handler on the root path, "/"
-app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-// adding routes
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-*/
 
 
