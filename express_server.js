@@ -35,14 +35,22 @@ function generateRandomString() {
   return randomStr;
 };
 
+function getUserByEmail(email) {
+  for (const key in users) {
+    if (users[key].email === email) {
+      return users[key];
+    }
+  }
+  return null;
+};
 
 // add a route for "/urls" and pass URL data to template using res.render()
 // display the logged in username in the header using cookie parser
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
-  const templateVars = { 
-    user: users[req.cookies["user_id"]],   
-    urls: urlDatabase 
+  const templateVars = {
+    user: users[req.cookies["user_id"]],
+    urls: urlDatabase
   };
   res.render("urls_index", templateVars);
 });
@@ -50,8 +58,8 @@ app.get("/urls", (req, res) => {
 // GET route to render the urls_new.ejs template in the browser, to present the form to the user
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/new", (req, res) => {
-  const templateVars = { 
-    user: users[req.cookies["user_id"]] 
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
   };
   res.render("urls_new", templateVars);
 });
@@ -92,10 +100,10 @@ app.post("/urls/:id", (req, res) => {
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { 
+  const templateVars = {
     user: users[req.cookies["user_id"]],
-    id: req.params.id, 
-    longURL: urlDatabase[req.params.id] 
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id]
   };
   res.render("urls_show", templateVars);
 });
@@ -115,14 +123,23 @@ app.post("/logout", (req, res) => {
 
 // GET route for /register which renders the urls_register template
 app.get("/register", (req, res) => {
-  const templateVars = { 
-    user: users[req.cookies["user_id"]] 
+  const templateVars = {
+    user: users[req.cookies["user_id"]]
   };
   res.render("urls_register", templateVars);
 });
 
 // POST route for /register: adds new user obj to global users obj, set user_id cookie and redirect users to /urls page
 app.post("/register", (req, res) => {
+  if (!req.body.email || !req.body.password) {
+    return res.status(400).send('400: Empty email or password field');
+  }
+  // check if user already exists or not 
+  const result = getUserByEmail(req.body.email);
+  if (result) {
+    return res.status(400).send('400: User already exists');
+  }
+  // if email & password fields are not empty & user already not exists then register user & set cookie 
   const userID = generateRandomString().slice(2);
   users[userID] = {
     id: userID,
@@ -130,7 +147,7 @@ app.post("/register", (req, res) => {
     password: req.body.password
   };
   res.cookie('user_id', userID);
-  res.redirect("/urls");
+  return res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
