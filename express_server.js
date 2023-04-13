@@ -16,6 +16,19 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = {
+  p1go: {
+    id: "p1go",
+    email: "user1@example.com",
+    password: "user1"
+  },
+  gb9m: {
+    id: "gb9m",
+    email: "user2@example.com",
+    password: "user2"
+  }
+};
+
 // generate a random short URL ID (random string)
 function generateRandomString() {
   const randomStr = Math.random().toString(32).substring(2, 8);
@@ -25,19 +38,21 @@ function generateRandomString() {
 
 // add a route for "/urls" and pass URL data to template using res.render()
 // display the logged in username in the header using cookie parser
-// extract the cookie value & set it to 'username' and send it to header
+// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
   const templateVars = { 
-    username: req.cookies["username"],   
+    user: users[req.cookies["user_id"]],   
     urls: urlDatabase 
   };
   res.render("urls_index", templateVars);
 });
 
 // GET route to render the urls_new.ejs template in the browser, to present the form to the user
-// extract the cookie value & set it to 'username' and send it to header
+// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/new", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { 
+    user: users[req.cookies["user_id"]] 
+  };
   res.render("urls_new", templateVars);
 });
 
@@ -75,10 +90,10 @@ app.post("/urls/:id", (req, res) => {
 
 // render information about a single URL
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
-// extract the cookie value & set it to 'username' and send it to header
+// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/:id", (req, res) => {
   const templateVars = { 
-    username: req.cookies["username"],
+    user: users[req.cookies["user_id"]],
     id: req.params.id, 
     longURL: urlDatabase[req.params.id] 
   };
@@ -94,14 +109,28 @@ app.post("/login", (req, res) => {
 
 // clears the username cookie and redirects the user back to the /urls page
 app.post("/logout", (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect("/urls");
 });
 
 // GET route for /register which renders the urls_register template
 app.get("/register", (req, res) => {
-  const templateVars = { username: req.cookies["username"] };
+  const templateVars = { 
+    user: users[req.cookies["user_id"]] 
+  };
   res.render("urls_register", templateVars);
+});
+
+// POST route for /register: adds new user obj to global users obj, set user_id cookie and redirect users to /urls page
+app.post("/register", (req, res) => {
+  const userID = generateRandomString().slice(2);
+  users[userID] = {
+    id: userID,
+    email: req.body.email,
+    password: req.body.password
+  };
+  res.cookie('user_id', userID);
+  res.redirect("/urls");
 });
 
 app.listen(PORT, () => {
