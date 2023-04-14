@@ -58,6 +58,10 @@ app.get("/urls", (req, res) => {
 // GET route to render the urls_new.ejs template in the browser, to present the form to the user
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/new", (req, res) => {
+  // redirects to /login if the user is not logged in
+  if(!req.cookies["user_id"]) {
+    return res.redirect("/login");
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]]
   };
@@ -66,6 +70,10 @@ app.get("/urls/new", (req, res) => {
 
 // add a POST route to receive the form submission of new URL (receive the input value to the server)
 app.post("/urls", (req, res) => {
+  // If the user is not logged in, POST /urls responds with an HTML message
+  if(!req.cookies["user_id"]) {
+    return res.send('Only logged in users can shorten URL');
+  }
   const shortURLid = generateRandomString();
   const reqLongURL = req.body.longURL;
   // save new short URL id and long URL to database(object) 
@@ -76,6 +84,10 @@ app.post("/urls", (req, res) => {
 
 // redirect short URLs to the appropriate longURL
 app.get("/u/:id", (req, res) => {
+  // if the :id is not exists in the urlDatabase responds with error message
+  if(!urlDatabase[req.params.id]) {
+    return res.status(403).send('403: id does not exists');
+  }
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
@@ -136,6 +148,10 @@ app.post("/logout", (req, res) => {
 
 // GET route for /register which renders the urls_register template
 app.get("/register", (req, res) => {
+  // redirects to /urls if the user is logged in
+  if(req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]]
   };
@@ -167,6 +183,10 @@ app.post("/register", (req, res) => {
 
 // GET /login route that responds with login form template
 app.get("/login", (req, res) => {
+  // redirects to /urls if the user is logged in
+  if(req.cookies["user_id"]) {
+    return res.redirect("/urls");
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]]
   };
