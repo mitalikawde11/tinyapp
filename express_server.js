@@ -12,18 +12,28 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    userID: "aJ48lW",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    userID: "aJ48lW",
+  },
+  lueomu: {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "r03s4t"
+  }
 };
 
 const users = {
-  p1go: {
-    id: "p1go",
+  aJ48lW: {
+    id: "aJ48lW",
     email: "user1@example.com",
     password: "user1"
   },
-  gb9m: {
-    id: "gb9m",
+  r03s4t: {
+    id: "r03s4t",
     email: "user2@example.com",
     password: "user2"
   }
@@ -44,13 +54,27 @@ function getUserByEmail(email) {
   return null;
 };
 
+// function returns the URLs where the userID is equal to the id of the currently logged-in user
+function urlsForUser(id) {
+  let result = {};
+  for (const key in urlDatabase) {
+    if(urlDatabase[key].userID === id) {
+      result[key] = urlDatabase[key];
+    }
+  }
+  return result;
+};
+
 // add a route for "/urls" and pass URL data to template using res.render()
 // display the logged in user email in the header using cookie parser
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
+  if(!req.cookies["user_id"]) {
+    return res.status(403).send('Login or register first to see URLs');
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]],
-    urls: urlDatabase
+    urls: urlsForUser(req.cookies["user_id"])
   };
   res.render("urls_index", templateVars);
 });
@@ -77,7 +101,11 @@ app.post("/urls", (req, res) => {
   const shortURLid = generateRandomString();
   const reqLongURL = req.body.longURL;
   // save new short URL id and long URL to database(object) 
-  urlDatabase[shortURLid] = reqLongURL;
+  urlDatabase[shortURLid] = {
+    longURL: reqLongURL,
+    userID: req.cookies["user_id"]
+  }
+  //urlDatabase[shortURLid].longURL = reqLongURL;
   // redirect to '/urls/:id'
   res.redirect(`/urls/${shortURLid}`);
 });
@@ -88,12 +116,22 @@ app.get("/u/:id", (req, res) => {
   if(!urlDatabase[req.params.id]) {
     return res.status(403).send('403: id does not exists');
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
 });
 
 // POST route removes the URL using Javascript's delete operator
 app.post("/urls/:id/delete", (req, res) => {
+  // only the owner of the URL can delete the link.
+  if(!urlDatabase[req.params.id]) {
+    return res.status(403).send('403: id does not exists');
+  }
+  if(!req.cookies["user_id"]) {
+    return res.status(403).send('Login first to delete URL');
+  }
+  if(urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('URL does not own by this user');
+  }
   const URLid = req.params.id;
   delete urlDatabase[URLid];
   res.redirect("/urls");
@@ -101,10 +139,20 @@ app.post("/urls/:id/delete", (req, res) => {
 
 // POST route updates the value of the stored long URL based on the new value
 app.post("/urls/:id", (req, res) => {
+  // only the owner of the URL can edit the link.
+  if(!urlDatabase[req.params.id]) {
+    return res.status(403).send('403: id does not exists');
+  }
+  if(!req.cookies["user_id"]) {
+    return res.status(403).send('Login first to edit URL');
+  }
+  if(urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('URL does not own by this user');
+  }
   const URLid = req.params.id;
   const reqNewURL = req.body.newURL;
   // edit long URL of that short URL id to the database(object) 
-  urlDatabase[URLid] = reqNewURL;
+  urlDatabase[URLid].longURL = reqNewURL;
   res.redirect("/urls");
 });
 
@@ -112,10 +160,17 @@ app.post("/urls/:id", (req, res) => {
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/:id", (req, res) => {
+  if(!req.cookies["user_id"]) {
+    return res.status(403).send('Login first to see URLs');
+  }
+  // returns a error message to the user if they do not own the URL.
+  if(urlDatabase[req.params.id].userID !== req.cookies["user_id"]) {
+    return res.status(403).send('URL does not belongs to this user');
+  }
   const templateVars = {
     user: users[req.cookies["user_id"]],
     id: req.params.id,
-    longURL: urlDatabase[req.params.id]
+    longURL: urlDatabase[req.params.id].longURL
   };
   res.render("urls_show", templateVars);
 });
@@ -171,7 +226,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send('400: User already exists');
   }
   // if email & password fields are not empty & user already not exists then register user & set cookie 
-  const userID = generateRandomString().slice(2);
+  const userID = generateRandomString();
   users[userID] = {
     id: userID,
     email: req.body.email,
