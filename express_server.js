@@ -55,7 +55,7 @@ function generateRandomString() {
 function urlsForUser(id) {
   let result = {};
   for (const key in urlDatabase) {
-    if(urlDatabase[key].userID === id) {
+    if (urlDatabase[key].userID === id) {
       result[key] = urlDatabase[key];
     }
   }
@@ -66,7 +66,7 @@ function urlsForUser(id) {
 // display the logged in user email in the header using cookie session
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.status(403).send('Login or register first to see URLs &nbsp&nbsp<a href="/login">Login</a>&nbsp&nbsp&nbsp<a href="/register">Register</a>');
   }
   const templateVars = {
@@ -80,7 +80,7 @@ app.get("/urls", (req, res) => {
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/new", (req, res) => {
   // redirects to /login if the user is not logged in
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.redirect("/login");
   }
   const templateVars = {
@@ -92,7 +92,7 @@ app.get("/urls/new", (req, res) => {
 // add a POST route to receive the form submission of new URL (receive the input value to the server)
 app.post("/urls", (req, res) => {
   // If the user is not logged in, POST /urls responds with an HTML message
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.send('Only logged in users can shorten URL');
   }
   const shortURLid = generateRandomString();
@@ -109,7 +109,7 @@ app.post("/urls", (req, res) => {
 // redirect short URLs to the appropriate longURL
 app.get("/u/:id", (req, res) => {
   // if the :id is not exists in the urlDatabase responds with error message
-  if(!urlDatabase[req.params.id]) {
+  if (!urlDatabase[req.params.id]) {
     return res.status(403).send('403: id does not exists');
   }
   const longURL = urlDatabase[req.params.id].longURL;
@@ -119,13 +119,13 @@ app.get("/u/:id", (req, res) => {
 // POST route removes the URL using Javascript's delete operator
 app.post("/urls/:id/delete", (req, res) => {
   // only the owner of the URL can delete the link.
-  if(!urlDatabase[req.params.id]) {
+  if (!urlDatabase[req.params.id]) {
     return res.status(403).send('403: id does not exists');
   }
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.status(403).send('Login first to delete URL');
   }
-  if(urlDatabase[req.params.id].userID !== req.session.user_id) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.status(403).send('URL does not own by this user');
   }
   const URLid = req.params.id;
@@ -136,13 +136,13 @@ app.post("/urls/:id/delete", (req, res) => {
 // POST route updates the value of the stored long URL based on the new value
 app.post("/urls/:id", (req, res) => {
   // only the owner of the URL can edit the link.
-  if(!urlDatabase[req.params.id]) {
+  if (!urlDatabase[req.params.id]) {
     return res.status(403).send('403: id does not exists');
   }
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.status(403).send('Login first to edit URL');
   }
-  if(urlDatabase[req.params.id].userID !== req.session.user_id) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.status(403).send('URL does not own by this user');
   }
   const URLid = req.params.id;
@@ -156,11 +156,11 @@ app.post("/urls/:id", (req, res) => {
 // use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls/:id", (req, res) => {
-  if(!req.session.user_id) {
+  if (!req.session.user_id) {
     return res.status(403).send('Login first to see URLs');
   }
   // returns a error message to the user if they do not own the URL.
-  if(urlDatabase[req.params.id].userID !== req.session.user_id) {
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
     return res.status(403).send('URL does not belongs to this user');
   }
   const templateVars = {
@@ -180,7 +180,7 @@ app.post("/login", (req, res) => {
   }
   // look up email & password (submitted via form) in users obj
   const userExists = getUserByEmail(req.body.email, users);
-  if(!userExists) {
+  if (!userExists) {
     return res.status(403).send('403: Incorrect email');
   } else {
     // use bcrypt when comparing passwords
@@ -203,7 +203,7 @@ app.post("/logout", (req, res) => {
 // GET route for /register which renders the urls_register template
 app.get("/register", (req, res) => {
   // redirects to /urls if the user is logged in
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     return res.redirect("/urls");
   }
   const templateVars = {
@@ -242,7 +242,7 @@ app.post("/register", (req, res) => {
 // GET /login route that responds with login form template
 app.get("/login", (req, res) => {
   // redirects to /urls if the user is logged in
-  if(req.session.user_id) {
+  if (req.session.user_id) {
     return res.redirect("/urls");
   }
   const templateVars = {
