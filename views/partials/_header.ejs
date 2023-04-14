@@ -25,15 +25,10 @@
           <button type="submit">Logout</button> 
         </form>       
       <% } else { %>
-        <form method="POST" action="/login">
-          <input
-            type="text"
-            name="username"
-            placeholder="username"
-          />
-          <button type="submit">Login</button>  
-        </form>
+        <a style="color: black" href="/login" >Login</a>
       <% } %>
+      &nbsp &nbsp
+      <a style="color: black" href="/register" >Register</a>
     </div>
   </nav>
 </header>
