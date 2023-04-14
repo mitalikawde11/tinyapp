@@ -36,12 +36,12 @@ const users = {
   aJ48lW: {
     id: "aJ48lW",
     email: "user1@example.com",
-    password: "$2a$10$fQBExdS/g/qGxu9a50uipeETLC3ymQ0CWal4r/2EXsHL0G6DXRDRm"  // user1
+    password: "$2a$10$m30yz61ic8ngJ6fhC2fBfuaHbWTaU0jyKz506vx2AR2Rc1nY7FXVS"  // purpleMonkey
   },
   r03s4t: {
     id: "r03s4t",
     email: "user2@example.com",
-    password: "$2a$10$l8pWSkjSWKyZPaJ8HvZBPuCsgUM/EZsUPVppofqq38ZUTcyF9RIha"  // user2
+    password: "$2a$10$6fZAmt/391lL4vDk/LEbY.Oyr7ADCPx97SMBSuFA02VMjN6jHG8Eq"  // pink_moon
   }
 };
 
@@ -63,11 +63,11 @@ function urlsForUser(id) {
 };
 
 // add a route for "/urls" and pass URL data to template using res.render()
-// display the logged in user email in the header using cookie parser
+// display the logged in user email in the header using cookie session
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
   if(!req.session.user_id) {
-    return res.status(403).send('Login or register first to see URLs');
+    return res.status(403).send('Login or register first to see URLs &nbsp&nbsp<a href="/login">Login</a>&nbsp&nbsp&nbsp<a href="/register">Register</a>');
   }
   const templateVars = {
     user: users[req.session.user_id],
@@ -235,6 +235,7 @@ app.post("/register", (req, res) => {
   };
   // set the user_id on session
   req.session.user_id = userID;
+  console.log(hashedPassword);
   return res.redirect("/urls");
 });
 
