@@ -45,7 +45,7 @@ function getUserByEmail(email) {
 };
 
 // add a route for "/urls" and pass URL data to template using res.render()
-// display the logged in username in the header using cookie parser
+// display the logged in user email in the header using cookie parser
 // extract the cookie value & look up user object in users objects using userid cookie value and send it to header
 app.get("/urls", (req, res) => {
   const templateVars = {
@@ -108,17 +108,30 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-// POST route set a cookie named 'username' to the value submitted in the request body via the login form
+// POST route set a cookie named 'user_id' to the logged in user's id
 app.post("/login", (req, res) => {
-  const value = req.body.username;
-  res.cookie('username', value);
+  if (!req.body.email) {
+    return res.status(400).send('400: Empty email field');
+  } else if (!req.body.password) {
+    return res.status(400).send('400: Empty password field');
+  }
+  // look up email & password (submitted via form) in users obj
+  const userExists = getUserByEmail(req.body.email);
+  if(!userExists) {
+    return res.status(403).send('403: Incorrect email');
+  } else {
+    if(userExists.password !== req.body.password) {
+      return res.status(403).send('403: Incorrect password');
+    } 
+  }
+  res.cookie('user_id', userExists.id);
   res.redirect("/urls");
 });
 
-// clears the username cookie and redirects the user back to the /urls page
+// clears the user_id cookie and redirects the user back to the /login page
 app.post("/logout", (req, res) => {
   res.clearCookie('user_id');
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 
 // GET route for /register which renders the urls_register template
@@ -131,12 +144,14 @@ app.get("/register", (req, res) => {
 
 // POST route for /register: adds new user obj to global users obj, set user_id cookie and redirect users to /urls page
 app.post("/register", (req, res) => {
-  if (!req.body.email || !req.body.password) {
-    return res.status(400).send('400: Empty email or password field');
+  if (!req.body.email) {
+    return res.status(400).send('400: Empty email field');
+  } else if (!req.body.password) {
+    return res.status(400).send('400: Empty password field');
   }
   // check if user already exists or not 
-  const result = getUserByEmail(req.body.email);
-  if (result) {
+  const userExists = getUserByEmail(req.body.email);
+  if (userExists) {
     return res.status(400).send('400: User already exists');
   }
   // if email & password fields are not empty & user already not exists then register user & set cookie 
