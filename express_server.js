@@ -2,6 +2,8 @@
 const express = require("express");
 // 'cookie-parser' helps to read the 'values' from the cookie
 const cookieParser = require('cookie-parser');
+//bcryptjs package to convert(hashing) the passwords provided by users before we store them on our server
+const bcrypt = require("bcryptjs");
 const app = express();
 const PORT = 8080;  // default port 8080
 
@@ -30,12 +32,12 @@ const users = {
   aJ48lW: {
     id: "aJ48lW",
     email: "user1@example.com",
-    password: "user1"
+    password: "$2a$10$fQBExdS/g/qGxu9a50uipeETLC3ymQ0CWal4r/2EXsHL0G6DXRDRm"
   },
   r03s4t: {
     id: "r03s4t",
     email: "user2@example.com",
-    password: "user2"
+    password: "$2a$10$l8pWSkjSWKyZPaJ8HvZBPuCsgUM/EZsUPVppofqq38ZUTcyF9RIha"
   }
 };
 
@@ -187,7 +189,10 @@ app.post("/login", (req, res) => {
   if(!userExists) {
     return res.status(403).send('403: Incorrect email');
   } else {
-    if(userExists.password !== req.body.password) {
+    // use bcrypt when comparing passwords
+    const comparePassword = bcrypt.compareSync(req.body.password, userExists.password);
+    if(!comparePassword) {
+    //if(userExists.password !== req.body.password) {
       return res.status(403).send('403: Incorrect password');
     } 
   }
@@ -227,10 +232,12 @@ app.post("/register", (req, res) => {
   }
   // if email & password fields are not empty & user already not exists then register user & set cookie 
   const userID = generateRandomString();
+  // use bcrypt to hash and save password
+  const hashedPassword = bcrypt.hashSync(req.body.password, 10);
   users[userID] = {
     id: userID,
     email: req.body.email,
-    password: req.body.password
+    password: hashedPassword
   };
   res.cookie('user_id', userID);
   return res.redirect("/urls");
