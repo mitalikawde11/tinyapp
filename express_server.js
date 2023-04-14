@@ -4,6 +4,7 @@ const express = require("express");
 const cookieSession = require("cookie-session");
 //bcryptjs package to convert(hashing) the passwords provided by users before we store them on our server
 const bcrypt = require("bcryptjs");
+const { getUserByEmail } = require("./helpers");
 const app = express();
 const PORT = 8080;  // default port 8080
 
@@ -48,15 +49,6 @@ const users = {
 function generateRandomString() {
   const randomStr = Math.random().toString(32).substring(2, 8);
   return randomStr;
-};
-
-function getUserByEmail(email) {
-  for (const key in users) {
-    if (users[key].email === email) {
-      return users[key];
-    }
-  }
-  return null;
 };
 
 // function returns the URLs where the userID is equal to the id of the currently logged-in user
@@ -187,7 +179,7 @@ app.post("/login", (req, res) => {
     return res.status(400).send('400: Empty password field');
   }
   // look up email & password (submitted via form) in users obj
-  const userExists = getUserByEmail(req.body.email);
+  const userExists = getUserByEmail(req.body.email, users);
   if(!userExists) {
     return res.status(403).send('403: Incorrect email');
   } else {
@@ -228,7 +220,7 @@ app.post("/register", (req, res) => {
     return res.status(400).send('400: Empty password field');
   }
   // check if user already exists or not 
-  const userExists = getUserByEmail(req.body.email);
+  const userExists = getUserByEmail(req.body.email, users);
   if (userExists) {
     return res.status(400).send('400: User already exists');
   }
