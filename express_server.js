@@ -1,83 +1,45 @@
 // Creating web server with express
 const express = require("express");
-// Replacing the cookie-parser express middleware with the cookie-session middleware
+// cookie-session middleware
 const cookieSession = require("cookie-session");
 //bcryptjs package to convert(hashing) the passwords provided by users before we store them on our server
 const bcrypt = require("bcryptjs");
-const { getUserByEmail } = require("./helpers");
+const { generateRandomString, getUserByEmail, urlsForUser } = require("./helpers");
+const { users, urlDatabase } = require("./database");
 const app = express();
-const PORT = 8080;  // default port 8080
+const PORT = 8080;  
 
 // telling the Express app to use EJS as its templating engine
 app.set("view engine", "ejs");
+// The body-parser library will convert the request body from a Buffer into string that we can read.
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: "session",
   keys: ["key1"]
 }));
-// The body-parser library will convert the request body from a Buffer into string that we can read.
-app.use(express.urlencoded({ extended: true }));
 
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    userID: "aJ48lW",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    userID: "aJ48lW",
-  },
-  lueomu: {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "r03s4t"
+app.get("/", (req, res) => {
+  if (req.session.user_id) {
+    return res.redirect("/urls");
+  } else {
+    return res.redirect("/login");
   }
-};
-
-const users = {
-  aJ48lW: {
-    id: "aJ48lW",
-    email: "user1@example.com",
-    password: "$2a$10$m30yz61ic8ngJ6fhC2fBfuaHbWTaU0jyKz506vx2AR2Rc1nY7FXVS"  // purpleMonkey
-  },
-  r03s4t: {
-    id: "r03s4t",
-    email: "user2@example.com",
-    password: "$2a$10$6fZAmt/391lL4vDk/LEbY.Oyr7ADCPx97SMBSuFA02VMjN6jHG8Eq"  // pink_moon
-  }
-};
-
-// generate a random short URL ID (random string)
-function generateRandomString() {
-  const randomStr = Math.random().toString(32).substring(2, 8);
-  return randomStr;
-};
-
-// function returns the URLs where the userID is equal to the id of the currently logged-in user
-function urlsForUser(id) {
-  let result = {};
-  for (const key in urlDatabase) {
-    if (urlDatabase[key].userID === id) {
-      result[key] = urlDatabase[key];
-    }
-  }
-  return result;
-};
+});
 
 // add a route for "/urls" and pass URL data to template using res.render()
-// display the logged in user email in the header using cookie session
-// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
+// extract the cookie value & look up user object in users objects using userid cookie value and send it to header to display the logged in user email
 app.get("/urls", (req, res) => {
   if (!req.session.user_id) {
     return res.status(403).send('Login or register first to see URLs &nbsp&nbsp<a href="/login">Login</a>&nbsp&nbsp&nbsp<a href="/register">Register</a>');
   }
   const templateVars = {
     user: users[req.session.user_id],
-    urls: urlsForUser(req.session.user_id)
+    urls: urlsForUser(req.session.user_id, urlDatabase)
   };
   res.render("urls_index", templateVars);
 });
 
-// GET route to render the urls_new.ejs template in the browser, to present the form to the user
-// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
+// GET route to render the urls_new.ejs (creating new URL) in the browser, to present the form to the user
 app.get("/urls/new", (req, res) => {
   // redirects to /login if the user is not logged in
   if (!req.session.user_id) {
@@ -87,6 +49,59 @@ app.get("/urls/new", (req, res) => {
     user: users[req.session.user_id]
   };
   res.render("urls_new", templateVars);
+});
+
+// redirect short URLs to the appropriate longURL
+app.get("/u/:id", (req, res) => {
+  // if the :id is not exists in the urlDatabase responds with error message
+  if (!urlDatabase[req.params.id]) {
+    return res.status(403).send('403: id does not exists');
+  }
+  const longURL = urlDatabase[req.params.id].longURL;
+  res.redirect(longURL);
+});
+
+// render information about a single URL
+// use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
+// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
+app.get("/urls/:id", (req, res) => {
+  if (!req.session.user_id) {
+    return res.status(403).send('Login first to see URLs');
+  }
+  // returns a error message to the user if they do not own the URL.
+  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
+    return res.status(403).send('URL does not belongs to this user');
+  }
+  const templateVars = {
+    user: users[req.session.user_id],
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id].longURL
+  };
+  res.render("urls_show", templateVars);
+});
+
+// GET route for /register which renders the urls_register template
+app.get("/register", (req, res) => {
+  // redirects to /urls if the user is logged in
+  if (req.session.user_id) {
+    return res.redirect("/urls");
+  }
+  const templateVars = {
+    user: users[req.session.user_id]
+  };
+  res.render("urls_register", templateVars);
+});
+
+// GET /login route that responds with login form template
+app.get("/login", (req, res) => {
+  // redirects to /urls if the user is logged in
+  if (req.session.user_id) {
+    return res.redirect("/urls");
+  }
+  const templateVars = {
+    user: users[req.session.user_id]
+  };
+  res.render("urls_login", templateVars);
 });
 
 // add a POST route to receive the form submission of new URL (receive the input value to the server)
@@ -104,16 +119,6 @@ app.post("/urls", (req, res) => {
   }
   // redirect to '/urls/:id'
   res.redirect(`/urls/${shortURLid}`);
-});
-
-// redirect short URLs to the appropriate longURL
-app.get("/u/:id", (req, res) => {
-  // if the :id is not exists in the urlDatabase responds with error message
-  if (!urlDatabase[req.params.id]) {
-    return res.status(403).send('403: id does not exists');
-  }
-  const longURL = urlDatabase[req.params.id].longURL;
-  res.redirect(longURL);
 });
 
 // POST route removes the URL using Javascript's delete operator
@@ -152,25 +157,6 @@ app.post("/urls/:id", (req, res) => {
   res.redirect("/urls");
 });
 
-// render information about a single URL
-// use the 'id' from the route parameter to lookup it's associated longURL from the urlDatabase
-// extract the cookie value & look up user object in users objects using userid cookie value and send it to header
-app.get("/urls/:id", (req, res) => {
-  if (!req.session.user_id) {
-    return res.status(403).send('Login first to see URLs');
-  }
-  // returns a error message to the user if they do not own the URL.
-  if (urlDatabase[req.params.id].userID !== req.session.user_id) {
-    return res.status(403).send('URL does not belongs to this user');
-  }
-  const templateVars = {
-    user: users[req.session.user_id],
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL
-  };
-  res.render("urls_show", templateVars);
-});
-
 // POST route set a cookie named 'user_id' to the logged in user's id
 app.post("/login", (req, res) => {
   if (!req.body.email) {
@@ -192,24 +178,6 @@ app.post("/login", (req, res) => {
   // set the user_id on session
   req.session.user_id = userExists.id;
   res.redirect("/urls");
-});
-
-// clears the user_id cookie and redirects the user back to the /login page
-app.post("/logout", (req, res) => {
-  req.session = null;
-  res.redirect("/login");
-});
-
-// GET route for /register which renders the urls_register template
-app.get("/register", (req, res) => {
-  // redirects to /urls if the user is logged in
-  if (req.session.user_id) {
-    return res.redirect("/urls");
-  }
-  const templateVars = {
-    user: users[req.session.user_id]
-  };
-  res.render("urls_register", templateVars);
 });
 
 // POST route for /register: adds new user obj to global users obj, set user_id cookie and redirect users to /urls page
@@ -235,21 +203,15 @@ app.post("/register", (req, res) => {
   };
   // set the user_id on session
   req.session.user_id = userID;
-  console.log(hashedPassword);
   return res.redirect("/urls");
 });
 
-// GET /login route that responds with login form template
-app.get("/login", (req, res) => {
-  // redirects to /urls if the user is logged in
-  if (req.session.user_id) {
-    return res.redirect("/urls");
-  }
-  const templateVars = {
-    user: users[req.session.user_id]
-  };
-  res.render("urls_login", templateVars);
+// clears the user_id cookie and redirects the user back to the /login page
+app.post("/logout", (req, res) => {
+  req.session = null;
+  res.redirect("/login");
 });
+
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
